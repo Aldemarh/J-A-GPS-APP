@@ -1,0 +1,39 @@
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import { config } from './config/index.js';
+import authRoutes from './modules/auth/auth.routes.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+
+/**
+ * Crea la aplicación Express (sin arrancar el servidor).
+ * Separar app.js de server.js permite probarla sin abrir un puerto.
+ */
+export function createApp() {
+  const app = express();
+
+  app.disable('x-powered-by');
+  app.set('trust proxy', config.isProduction ? 1 : false);
+
+  app.use(helmet());
+  app.use(
+    cors({
+      origin: config.CORS_ORIGIN,
+      credentials: false,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
+  );
+  app.use(express.json({ limit: '100kb' }));
+
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', service: 'jya-gps-api', time: new Date().toISOString() });
+  });
+
+  app.use('/api/auth', authRoutes);
+
+  app.use(notFound);
+  app.use(errorHandler);
+
+  return app;
+}
