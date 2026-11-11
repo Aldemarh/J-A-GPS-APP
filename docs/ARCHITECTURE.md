@@ -105,7 +105,7 @@ J&A-GPS-APP/
 2. ✅ Frontend: login, registro y ruta protegida.
 3. ✅ Vehículos (CRUD por cuenta) y mapa base.
 4. ✅ Dispositivos GPS: registro y vínculo con el vehículo.
-5. ✅ Recepción de posiciones (protocolo de Traccar Client) y última ubicación en el mapa. Probado con el simulador; falta probar con un celular real.
+5. ✅ Recepción de posiciones (protocolo de Traccar Client) y última ubicación en el mapa. Probado con el simulador; la prueba con un celular real queda para cuando la API esté publicada con HTTPS (en red local exige IP, mismo Wi‑Fi y permiso de red local en iOS).
 6. Tiempo real con Socket.IO: el marcador se mueve solo; estado en línea / sin señal.
 7. Historial de recorridos: trayecto por fechas, distancia y paradas.
 8. Mi cuenta: perfil, cambio de contraseña y recuperación por correo.
