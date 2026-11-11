@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Tokens de color de la marca (fácil de cambiar en un solo lugar) */
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+}
