@@ -62,7 +62,11 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
   }
 
   if (!res.ok) {
-    throw new ApiError(data?.error || `Error ${res.status}`, res.status, data?.details);
+    const fallback =
+      res.status === 502 || res.status === 503 || res.status === 504
+        ? 'El servidor no está disponible en este momento. Verifica que el backend esté corriendo.'
+        : `Error ${res.status}`;
+    throw new ApiError(data?.error || fallback, res.status, data?.details);
   }
   return data;
 }

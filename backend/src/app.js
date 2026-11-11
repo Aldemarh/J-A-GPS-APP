@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { config } from './config/index.js';
+import { query } from './db/pool.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
@@ -26,8 +27,19 @@ export function createApp() {
   );
   app.use(express.json({ limit: '100kb' }));
 
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', service: 'jya-gps-api', time: new Date().toISOString() });
+  app.get('/api/health', async (req, res) => {
+    let database = 'ok';
+    try {
+      await query('SELECT 1');
+    } catch {
+      database = 'unavailable';
+    }
+    res.status(database === 'ok' ? 200 : 503).json({
+      status: database === 'ok' ? 'ok' : 'degraded',
+      service: 'jya-gps-api',
+      database,
+      time: new Date().toISOString(),
+    });
   });
 
   app.use('/api/auth', authRoutes);
