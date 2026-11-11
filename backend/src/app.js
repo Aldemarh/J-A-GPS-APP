@@ -5,6 +5,9 @@ import { config } from './config/index.js';
 import { query } from './db/pool.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import vehicleRoutes from './modules/vehicles/vehicles.routes.js';
+import deviceRoutes from './modules/devices/devices.routes.js';
+import positionRoutes from './modules/positions/positions.routes.js';
+import ingestRoutes from './modules/ingest/ingest.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 /**
@@ -45,6 +48,9 @@ export function createApp() {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/vehicles', vehicleRoutes);
+  app.use('/api/devices', deviceRoutes);
+  app.use('/api/positions', positionRoutes);
+  app.use('/api/ingest', ingestRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

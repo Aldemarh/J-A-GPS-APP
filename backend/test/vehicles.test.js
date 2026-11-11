@@ -1,14 +1,15 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/app.js';
-import { closePool } from '../src/db/pool.js';
+import { closePool, query } from '../src/db/pool.js';
 
 // Pruebas de integración del módulo de vehículos, incluido el aislamiento entre cuentas.
-// Requieren PostgreSQL con migraciones aplicadas.
+// Requieren PostgreSQL con migraciones aplicadas. Borran las cuentas que crean.
 
 let server;
 let base;
 const stamp = Date.now();
+const emailFor = (label) => `veh-${label}-${stamp}@ejemplo.com`;
 let tokenA;
 let tokenB;
 let vehicleId;
@@ -28,7 +29,7 @@ async function call(method, path, { body, token } = {}) {
 
 async function registerUser(label) {
   const { data } = await call('POST', '/auth/register', {
-    body: { fullName: `Vehiculos ${label}`, email: `veh-${label}-${stamp}@ejemplo.com`, password: 'claveSegura123' },
+    body: { fullName: `Vehiculos ${label}`, email: emailFor(label), password: 'claveSegura123' },
   });
   return data.token;
 }
@@ -45,6 +46,9 @@ before(async () => {
 });
 
 after(async () => {
+  await query('DELETE FROM tenants WHERE id IN (SELECT tenant_id FROM users WHERE email = ANY($1))', [
+    [emailFor('a'), emailFor('b')],
+  ]);
   await new Promise((resolve) => server.close(resolve));
   await closePool();
 });

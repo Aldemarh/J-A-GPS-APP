@@ -58,6 +58,42 @@ Todos requieren token. Cada cuenta solo ve y modifica sus propios vehículos. Cr
 
 La placa se guarda en mayúsculas, sin espacios ni guiones, y es única dentro de cada cuenta.
 
+## Endpoints de dispositivos GPS
+
+Mismas reglas que vehículos: token obligatorio, aislamiento por cuenta y rol `owner`/`admin` para modificar.
+
+| Método | Ruta                 | Descripción                                                        |
+|--------|----------------------|--------------------------------------------------------------------|
+| GET    | `/api/devices`       | Lista los dispositivos de la cuenta                                |
+| GET    | `/api/devices/:id`   | Detalle de un dispositivo                                          |
+| POST   | `/api/devices`       | Crea un dispositivo (`name`, `vehicleId`); el servidor genera el identificador |
+| PATCH  | `/api/devices/:id`   | Cambia `name` o lo mueve a otro vehículo propio (`vehicleId`)      |
+| DELETE | `/api/devices/:id`   | Elimina el dispositivo                                             |
+
+Un vehículo tiene como máximo un dispositivo. Al borrar el vehículo se borra su dispositivo.
+
+## Posiciones
+
+| Método     | Ruta                     | Descripción                                                     | Auth                       |
+|------------|--------------------------|-----------------------------------------------------------------|----------------------------|
+| GET / POST | `/api/ingest/osmand`     | Recibe posiciones del dispositivo (protocolo OsmAnd, Traccar Client) | Identificador del dispositivo |
+| GET        | `/api/positions/latest`  | Última posición de cada vehículo de la cuenta                   | JWT                        |
+
+El historial pertenece al vehículo: si se borra el dispositivo, las posiciones se conservan.
+
+### Simular un dispositivo (sin celular)
+
+1. En el panel, abre "Conectar" en un vehículo y copia el identificador.
+2. Con la API corriendo:
+
+```bash
+cd backend
+npm run simulate -- <identificador>                # una posición cada 5 s desde Bogotá
+npm run simulate -- <identificador> --interval 2 --lat 6.2442 --lon -75.5812
+```
+
+El mapa se actualiza cada 10 segundos. `Ctrl+C` detiene la simulación.
+
 ## Frontend
 
 ```bash
@@ -72,6 +108,8 @@ npm run dev                 # http://localhost:5173 (redirige /api al backend en
 cd backend
 npm test                    # requiere la base de datos con migraciones aplicadas
 ```
+
+Las pruebas crean cuentas `@ejemplo.com` y las borran al terminar. Nunca ejecutarlas contra la base de producción.
 
 ## Seguridad
 

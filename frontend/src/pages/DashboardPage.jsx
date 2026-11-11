@@ -1,18 +1,34 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useVehicles } from '../hooks/useVehicles.js';
+import { useDevices } from '../hooks/useDevices.js';
+import { useLatestPositions } from '../hooks/useLatestPositions.js';
 import { ApiError } from '../api/client.js';
 import FleetMap from '../components/map/FleetMap.jsx';
 import VehicleList from '../components/vehicles/VehicleList.jsx';
 import VehicleFormModal from '../components/vehicles/VehicleFormModal.jsx';
+import DeviceModal from '../components/devices/DeviceModal.jsx';
 
 // Panel principal: lista de vehículos de la cuenta + mapa.
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const { vehicles, status, error, reload, create, update, remove } = useVehicles();
+  const devices = useDevices();
+  const latest = useLatestPositions();
   // null = cerrado, 'new' = crear, objeto = editar
   const [editing, setEditing] = useState(null);
+  // Vehículo cuya ventana de GPS está abierta
+  const [gpsVehicle, setGpsVehicle] = useState(null);
   const [notice, setNotice] = useState('');
+
+  const deviceByVehicle = useMemo(
+    () => new Map(devices.devices.map((d) => [d.vehicleId, d])),
+    [devices.devices],
+  );
+  const positionByVehicle = useMemo(
+    () => new Map(latest.positions.map((p) => [p.vehicleId, p])),
+    [latest.positions],
+  );
 
   const canEdit = user?.role === 'owner' || user?.role === 'admin';
 
@@ -28,9 +44,11 @@ export default function DashboardPage() {
   }
 
   async function handleDelete(vehicle) {
-    if (!window.confirm(`¿Eliminar "${vehicle.name}" (${vehicle.plate})? Esta acción no se puede deshacer.`)) return;
+    const gpsNote = deviceByVehicle.has(vehicle.id) ? ' También se eliminará su dispositivo GPS.' : '';
+    if (!window.confirm(`¿Eliminar "${vehicle.name}" (${vehicle.plate})?${gpsNote} Esta acción no se puede deshacer.`)) return;
     try {
       await remove(vehicle.id);
+      devices.forgetVehicle(vehicle.id);
       setNotice('Vehículo eliminado.');
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : 'No se pudo eliminar el vehículo.');
@@ -91,17 +109,29 @@ export default function DashboardPage() {
             status={status}
             error={error}
             canEdit={canEdit}
+            deviceByVehicle={deviceByVehicle}
+            positionByVehicle={positionByVehicle}
+            devicesStatus={devices.status}
             onEdit={(v) => {
               setNotice('');
               setEditing(v);
             }}
             onDelete={handleDelete}
+            onOpenDevice={(v) => {
+              setNotice('');
+              setGpsVehicle(v);
+            }}
             onRetry={reload}
           />
         </section>
 
         <section className="h-[55vh] flex-1 lg:h-auto">
-          <FleetMap vehicleCount={status === 'ready' ? vehicles.length : null} />
+          <FleetMap
+            vehicles={vehicles}
+            vehiclesStatus={status}
+            positions={latest.positions}
+            positionsStatus={latest.status}
+          />
         </section>
       </main>
 
@@ -110,6 +140,22 @@ export default function DashboardPage() {
           vehicle={editing === 'new' ? null : editing}
           onSubmit={handleSubmit}
           onClose={() => setEditing(null)}
+        />
+      )}
+
+      {gpsVehicle && (
+        <DeviceModal
+          vehicle={gpsVehicle}
+          device={deviceByVehicle.get(gpsVehicle.id)}
+          lastPositionAt={positionByVehicle.get(gpsVehicle.id)?.recordedAt}
+          canEdit={canEdit}
+          onCreate={devices.create}
+          onRemove={async (device) => {
+            await devices.remove(device.id);
+            setGpsVehicle(null);
+            setNotice('Dispositivo GPS eliminado.');
+          }}
+          onClose={() => setGpsVehicle(null)}
         />
       )}
     </div>

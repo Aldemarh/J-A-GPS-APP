@@ -86,6 +86,16 @@ export const vehiclesApi = {
   remove: (id) => apiRequest(`/vehicles/${id}`, { method: 'DELETE' }),
 };
 
+export const devicesApi = {
+  list: () => apiRequest('/devices'),
+  create: (payload) => apiRequest('/devices', { method: 'POST', body: payload }),
+  remove: (id) => apiRequest(`/devices/${id}`, { method: 'DELETE' }),
+};
+
+export const positionsApi = {
+  latest: () => apiRequest('/positions/latest'),
+};
+
 export const authApi = {
   register: (payload) => apiRequest('/auth/register', { method: 'POST', body: payload }),
   login: (payload) => apiRequest('/auth/login', { method: 'POST', body: payload }),

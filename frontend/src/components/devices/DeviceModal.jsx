@@ -1,0 +1,168 @@
+import { useState } from 'react';
+import FormField from '../FormField.jsx';
+import Modal from '../Modal.jsx';
+import { ApiError } from '../../api/client.js';
+import { PROTOCOL_LABELS, formatLastSeen } from './deviceFormat.js';
+
+/**
+ * GPS de un vehículo: si no tiene dispositivo, permite crearlo; si lo tiene, muestra su identificador.
+ * onCreate(payload) y onRemove(device) devuelven promesas.
+ */
+export default function DeviceModal({ vehicle, device, lastPositionAt, canEdit, onCreate, onRemove, onClose }) {
+  const [name, setName] = useState('Mi celular');
+  const [nameError, setNameError] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [copyNotice, setCopyNotice] = useState('');
+
+  async function run(action) {
+    setError('');
+    setNameError('');
+    setBusy(true);
+    try {
+      await action();
+    } catch (err) {
+      if (err instanceof ApiError && err.details?.length) {
+        const forName = err.details.find((d) => d.field === 'name');
+        const other = err.details.find((d) => d.field !== 'name');
+        if (forName) setNameError(forName.message);
+        if (other) setError(other.message);
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Ocurrió un error inesperado.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleCreate(e) {
+    e.preventDefault();
+    run(() => onCreate({ name, vehicleId: vehicle.id }));
+  }
+
+  function handleRemove() {
+    if (!window.confirm(`¿Eliminar el dispositivo "${device.name}"? El celular dejará de reportar a este vehículo.`)) return;
+    run(() => onRemove(device));
+  }
+
+  async function copyIdentifier() {
+    try {
+      await navigator.clipboard.writeText(device.identifier);
+      setCopyNotice('Copiado.');
+    } catch {
+      setCopyNotice('No se pudo copiar: selecciónalo y cópialo manualmente.');
+    }
+  }
+
+  const errorBox = error && (
+    <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+      {error}
+    </div>
+  );
+
+  if (!device) {
+    return (
+      <Modal title={`Conectar GPS a ${vehicle.name}`} onClose={onClose} closeDisabled={busy}>
+        <p className="mt-2 text-sm text-slate-600">
+          El rastreador será tu celular, con la app gratuita <strong>Traccar Client</strong> (Android y iOS). Al crear el
+          dispositivo recibirás un identificador para configurarla.
+        </p>
+        {errorBox}
+        <form onSubmit={handleCreate} noValidate className="mt-4 space-y-4">
+          <FormField
+            id="device-name"
+            name="name"
+            label="Nombre del dispositivo"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameError('');
+            }}
+            error={nameError}
+            autoFocus
+            required
+          />
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? 'Creando...' : 'Crear dispositivo'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal title={`GPS de ${vehicle.name}`} onClose={onClose} closeDisabled={busy}>
+      {errorBox}
+      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+        <dt className="text-slate-500">Nombre</dt>
+        <dd className="font-medium text-slate-900">{device.name}</dd>
+        <dt className="text-slate-500">Tipo</dt>
+        <dd className="text-slate-900">{PROTOCOL_LABELS[device.protocol] ?? device.protocol}</dd>
+        <dt className="text-slate-500">Estado</dt>
+        <dd className="text-slate-900">{formatLastSeen(lastPositionAt ?? device.lastSeenAt)}</dd>
+      </dl>
+
+      <div className="mt-5 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-900/5">
+        <p className="text-sm font-medium text-slate-700">Identificador del dispositivo</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <code className="select-all rounded-md bg-white px-3 py-2 font-mono text-lg tracking-wider text-slate-900 ring-1 ring-slate-300">
+            {device.identifier}
+          </code>
+          <button
+            type="button"
+            onClick={copyIdentifier}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Copiar
+          </button>
+        </div>
+        {copyNotice && (
+          <p role="status" className="mt-2 text-xs text-slate-600">
+            {copyNotice}
+          </p>
+        )}
+        <p className="mt-3 text-xs text-slate-500">
+          Escríbelo en el campo «Identificador del dispositivo» de Traccar Client. Funciona como la contraseña del
+          dispositivo: no lo compartas.
+        </p>
+      </div>
+
+      <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        {canEdit ? (
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={busy}
+            className="rounded-lg px-4 py-2 font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            {busy ? 'Eliminando...' : 'Eliminar dispositivo'}
+          </button>
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={busy}
+          className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+        >
+          Cerrar
+        </button>
+      </div>
+    </Modal>
+  );
+}

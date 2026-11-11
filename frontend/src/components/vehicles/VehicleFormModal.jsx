@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import FormField from '../FormField.jsx';
+import Modal from '../Modal.jsx';
 import { ApiError } from '../../api/client.js';
 import { VEHICLE_TYPE_LABELS } from './vehicleTypes.js';
 
@@ -29,13 +30,6 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Cerrar con Escape
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && !submitting && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, submitting]);
-
   const handleChange = (e) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
     setFieldErrors((errs) => ({ ...errs, [e.target.name]: undefined }));
@@ -60,107 +54,93 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[1100] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
-      onMouseDown={(e) => e.target === e.currentTarget && !submitting && onClose()}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="vehicle-form-title"
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 shadow-xl sm:max-w-lg sm:rounded-2xl"
-      >
-        <h2 id="vehicle-form-title" className="text-lg font-bold text-slate-900">
-          {isEdit ? 'Editar vehículo' : 'Agregar vehículo'}
-        </h2>
+    <Modal title={isEdit ? 'Editar vehículo' : 'Agregar vehículo'} onClose={onClose} closeDisabled={submitting}>
+      <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
+        {error && (
+          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
-          {error && (
-            <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+        <FormField
+          id="name"
+          name="name"
+          label="Nombre del vehículo"
+          placeholder="Ej: Carro de la casa"
+          value={form.name}
+          onChange={handleChange}
+          error={fieldErrors.name}
+          autoFocus
+          required
+        />
 
+        <div className="grid gap-4 sm:grid-cols-2">
           <FormField
-            id="name"
-            name="name"
-            label="Nombre del vehículo"
-            placeholder="Ej: Carro de la casa"
-            value={form.name}
+            id="plate"
+            name="plate"
+            label="Placa"
+            placeholder="ABC123"
+            value={form.plate}
             onChange={handleChange}
-            error={fieldErrors.name}
-            autoFocus
+            error={fieldErrors.plate}
+            autoCapitalize="characters"
             required
           />
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              id="plate"
-              name="plate"
-              label="Placa"
-              placeholder="ABC123"
-              value={form.plate}
+          <div>
+            <label htmlFor="type" className="mb-1 block text-sm font-medium text-slate-700">
+              Tipo
+            </label>
+            <select
+              id="type"
+              name="type"
+              value={form.type}
               onChange={handleChange}
-              error={fieldErrors.plate}
-              autoCapitalize="characters"
-              required
-            />
-            <div>
-              <label htmlFor="type" className="mb-1 block text-sm font-medium text-slate-700">
-                Tipo
-              </label>
-              <select
-                id="type"
-                name="type"
-                value={form.type}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-              >
-                {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              {fieldErrors.type && <p className="mt-1 text-xs text-red-600">{fieldErrors.type}</p>}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="brand" name="brand" label="Marca (opcional)" value={form.brand} onChange={handleChange} error={fieldErrors.brand} />
-            <FormField id="model" name="model" label="Modelo (opcional)" value={form.model} onChange={handleChange} error={fieldErrors.model} />
-            <FormField id="color" name="color" label="Color (opcional)" value={form.color} onChange={handleChange} error={fieldErrors.color} />
-            <FormField
-              id="year"
-              name="year"
-              type="number"
-              inputMode="numeric"
-              label="Año (opcional)"
-              value={form.year}
-              onChange={handleChange}
-              error={fieldErrors.year}
-            />
-          </div>
-
-          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Agregar vehículo'}
-            </button>
+              {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.type && <p className="mt-1 text-xs text-red-600">{fieldErrors.type}</p>}
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField id="brand" name="brand" label="Marca (opcional)" value={form.brand} onChange={handleChange} error={fieldErrors.brand} />
+          <FormField id="model" name="model" label="Modelo (opcional)" value={form.model} onChange={handleChange} error={fieldErrors.model} />
+          <FormField id="color" name="color" label="Color (opcional)" value={form.color} onChange={handleChange} error={fieldErrors.color} />
+          <FormField
+            id="year"
+            name="year"
+            type="number"
+            inputMode="numeric"
+            label="Año (opcional)"
+            value={form.year}
+            onChange={handleChange}
+            error={fieldErrors.year}
+          />
+        </div>
+
+        <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Agregar vehículo'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

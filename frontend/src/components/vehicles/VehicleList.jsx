@@ -1,6 +1,47 @@
 import { VEHICLE_TYPE_LABELS } from './vehicleTypes.js';
+import { formatLastSeen } from '../devices/deviceFormat.js';
 
-export default function VehicleList({ vehicles, status, error, canEdit, onEdit, onDelete, onRetry }) {
+function GpsLine({ device, position, devicesStatus, canEdit, onOpen }) {
+  if (devicesStatus === 'loading') return <p className="mt-1 text-xs text-slate-400">Consultando GPS...</p>;
+  if (devicesStatus === 'error') return <p className="mt-1 text-xs text-slate-400">Estado del GPS no disponible</p>;
+
+  const action = (label) => (
+    <>
+      {' · '}
+      <button type="button" onClick={onOpen} className="font-semibold text-brand-600 hover:underline">
+        {label}
+      </button>
+    </>
+  );
+
+  if (!device) {
+    return (
+      <p className="mt-1 text-xs text-slate-400">
+        Sin dispositivo GPS{canEdit && action('Conectar')}
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1 text-xs text-slate-500">
+      GPS: {device.name} · {formatLastSeen(position?.recordedAt ?? device.lastSeenAt)}
+      {action('Ver')}
+    </p>
+  );
+}
+
+export default function VehicleList({
+  vehicles,
+  status,
+  error,
+  canEdit,
+  deviceByVehicle,
+  positionByVehicle,
+  devicesStatus,
+  onEdit,
+  onDelete,
+  onOpenDevice,
+  onRetry,
+}) {
   if (status === 'loading') {
     return <p className="py-6 text-center text-sm text-slate-500">Cargando vehículos...</p>;
   }
@@ -43,7 +84,13 @@ export default function VehicleList({ vehicles, status, error, canEdit, onEdit, 
                   <> · {[v.brand, v.model, v.year].filter(Boolean).join(' ')}</>
                 )}
               </p>
-              <p className="mt-1 text-xs text-slate-400">Sin dispositivo GPS</p>
+              <GpsLine
+                device={deviceByVehicle.get(v.id)}
+                position={positionByVehicle.get(v.id)}
+                devicesStatus={devicesStatus}
+                canEdit={canEdit}
+                onOpen={() => onOpenDevice(v)}
+              />
             </div>
             {canEdit && (
               <div className="flex shrink-0 gap-1">

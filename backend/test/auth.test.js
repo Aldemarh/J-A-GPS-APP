@@ -1,10 +1,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/app.js';
-import { closePool } from '../src/db/pool.js';
+import { closePool, query } from '../src/db/pool.js';
 
 // Pruebas de integración del módulo auth. Requieren PostgreSQL con migraciones aplicadas.
-// Cada ejecución usa correos únicos para no chocar con datos previos.
+// Cada ejecución usa correos únicos para no chocar con datos previos y borra la cuenta al terminar.
 
 let server;
 let base;
@@ -34,6 +34,7 @@ before(async () => {
 });
 
 after(async () => {
+  await query('DELETE FROM tenants WHERE id IN (SELECT tenant_id FROM users WHERE email = $1)', [email]);
   await new Promise((resolve) => server.close(resolve));
   await closePool();
 });
