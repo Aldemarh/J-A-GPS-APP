@@ -2,6 +2,7 @@
 // Centraliza: base URL, header Authorization y tratamiento de errores.
 
 const TOKEN_KEY = 'jya_gps_token';
+export const SESSION_EXPIRED_EVENT = 'jya:session-expired';
 
 // Acceso seguro a localStorage (puede fallar en modo privado o con datos bloqueados).
 export const tokenStorage = {
@@ -61,6 +62,13 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
     /* respuesta sin cuerpo JSON */
   }
 
+  // Token vencido o inválido en una ruta privada: se cierra la sesión en toda la app.
+  const isAuthForm = path === '/auth/login' || path === '/auth/register';
+  if (res.status === 401 && authToken && !isAuthForm) {
+    tokenStorage.clear();
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  }
+
   if (!res.ok) {
     const fallback =
       res.status === 502 || res.status === 503 || res.status === 504
@@ -70,6 +78,13 @@ export async function apiRequest(path, { method = 'GET', body, token } = {}) {
   }
   return data;
 }
+
+export const vehiclesApi = {
+  list: () => apiRequest('/vehicles'),
+  create: (payload) => apiRequest('/vehicles', { method: 'POST', body: payload }),
+  update: (id, payload) => apiRequest(`/vehicles/${id}`, { method: 'PATCH', body: payload }),
+  remove: (id) => apiRequest(`/vehicles/${id}`, { method: 'DELETE' }),
+};
 
 export const authApi = {
   register: (payload) => apiRequest('/auth/register', { method: 'POST', body: payload }),

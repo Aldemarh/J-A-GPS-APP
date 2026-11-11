@@ -4,6 +4,7 @@ import cors from 'cors';
 import { config } from './config/index.js';
 import { query } from './db/pool.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import vehicleRoutes from './modules/vehicles/vehicles.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 /**
@@ -43,6 +44,7 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/vehicles', vehicleRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

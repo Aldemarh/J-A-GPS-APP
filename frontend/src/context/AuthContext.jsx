@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { authApi, tokenStorage } from '../api/client.js';
+import { authApi, tokenStorage, SESSION_EXPIRED_EVENT } from '../api/client.js';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +24,17 @@ export function AuthProvider({ children }) {
         tokenStorage.clear();
         setStatus('anonymous');
       });
+  }, []);
+
+  // Si cualquier petición detecta el token vencido, se vuelve al estado sin sesión
+  // (ProtectedRoute redirige a /login).
+  useEffect(() => {
+    const onExpired = () => {
+      setUser(null);
+      setStatus('anonymous');
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, []);
 
   const saveSession = ({ token, user: profile }) => {

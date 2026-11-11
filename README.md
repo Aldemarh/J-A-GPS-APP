@@ -4,10 +4,10 @@ Plataforma SaaS de monitoreo GPS para vehículos. Inicialmente para personas nat
 
 ## Stack
 
-- **Frontend:** React + Vite + Tailwind CSS *(pendiente)*
+- **Frontend:** React + Vite + Tailwind CSS
 - **Backend:** Node.js + Express
-- **Base de datos:** PostgreSQL
-- **Mapas:** Leaflet + OpenStreetMap *(pendiente)*
+- **Base de datos:** PostgreSQL (Neon)
+- **Mapas:** Leaflet + OpenStreetMap
 - **Tiempo real:** Socket.IO *(pendiente)*
 - **Autenticación:** JWT + bcrypt
 
@@ -43,6 +43,35 @@ curl http://localhost:4000/api/health
 | GET    | `/api/auth/me`       | Datos del usuario autenticado       | Sí   |
 
 Enviar el token como `Authorization: Bearer <token>`.
+
+## Endpoints de vehículos
+
+Todos requieren token. Cada cuenta solo ve y modifica sus propios vehículos. Crear, editar y eliminar requiere rol `owner` o `admin`.
+
+| Método | Ruta                 | Descripción                                   |
+|--------|----------------------|-----------------------------------------------|
+| GET    | `/api/vehicles`      | Lista los vehículos de la cuenta              |
+| GET    | `/api/vehicles/:id`  | Detalle de un vehículo                        |
+| POST   | `/api/vehicles`      | Crea un vehículo (`name`, `plate` obligatorios) |
+| PATCH  | `/api/vehicles/:id`  | Edita solo los campos enviados                |
+| DELETE | `/api/vehicles/:id`  | Elimina el vehículo                           |
+
+La placa se guarda en mayúsculas, sin espacios ni guiones, y es única dentro de cada cuenta.
+
+## Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173 (redirige /api al backend en :4000)
+```
+
+## Pruebas
+
+```bash
+cd backend
+npm test                    # requiere la base de datos con migraciones aplicadas
+```
 
 ## Seguridad
 
