@@ -38,7 +38,7 @@ export default function LoginPage() {
       footer={
         <>
           ¿No tienes cuenta?{' '}
-          <Link to="/register" className="font-semibold text-brand-600 hover:underline">
+          <Link to="/register" className="font-medium text-blue hover:underline">
             Regístrate
           </Link>
         </>
@@ -46,7 +46,7 @@ export default function LoginPage() {
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {error && (
-          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="alert-error">
             {error}
           </div>
         )}
@@ -73,7 +73,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 font-semibold text-white shadow transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn btn-primary w-full py-2.5"
         >
           {submitting ? 'Ingresando...' : 'Ingresar'}
         </button>

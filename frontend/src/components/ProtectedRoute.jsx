@@ -17,6 +17,6 @@ export default function ProtectedRoute() {
 
 export function FullScreenMessage({ text }) {
   return (
-    <div className="flex min-h-screen items-center justify-center text-slate-500">{text}</div>
+    <div className="flex min-h-screen items-center justify-center text-mute">{text}</div>
   );
 }

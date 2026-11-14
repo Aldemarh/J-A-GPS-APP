@@ -57,7 +57,7 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
     <Modal title={isEdit ? 'Editar vehículo' : 'Agregar vehículo'} onClose={onClose} closeDisabled={submitting}>
       <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
         {error && (
-          <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="alert-error">
             {error}
           </div>
         )}
@@ -87,7 +87,7 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
             required
           />
           <div>
-            <label htmlFor="type" className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="type" className="field-label">
               Tipo
             </label>
             <select
@@ -95,7 +95,7 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
               name="type"
               value={form.type}
               onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="input"
             >
               {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -103,7 +103,7 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
                 </option>
               ))}
             </select>
-            {fieldErrors.type && <p className="mt-1 text-xs text-red-600">{fieldErrors.type}</p>}
+            {fieldErrors.type && <p className="mt-1 text-xs text-red">{fieldErrors.type}</p>}
           </div>
         </div>
 
@@ -128,14 +128,14 @@ export default function VehicleFormModal({ vehicle, onSubmit, onClose }) {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            className="btn btn-ghost"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white shadow hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn btn-primary"
           >
             {submitting ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Agregar vehículo'}
           </button>

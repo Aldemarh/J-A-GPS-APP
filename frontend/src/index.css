@@ -1,13 +1,201 @@
 @import "tailwindcss";
 
-/* Tokens de color de la marca (fácil de cambiar en un solo lugar) */
+/*
+ * Tokens de diseño: los mismos de la landing (Project-GPS/index.html) para que la
+ * plataforma se vea como el panel de demostración. Se cambian aquí, en un solo lugar.
+ */
 @theme {
-  --color-brand-50: #eef6ff;
-  --color-brand-500: #2563eb;
-  --color-brand-600: #1d4ed8;
-  --color-brand-700: #1e40af;
+  --font-sans: "Geist", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #0a0c10; /* fondo más profundo (login) */
+  --color-panel: #0b0e13; /* fondo de la app */
+  --color-rail: #0d1117; /* menú lateral */
+  --color-ink-2: #0f1319; /* tarjetas y campos */
+  --color-ink-3: #161b23;
+  --color-ink-4: #1e2530;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-2: rgb(255 255 255 / 0.16);
+  --color-fg: #eef1f5; /* texto principal */
+  --color-mute: #9aa4b2; /* texto secundario */
+  --color-dim: #6b7686; /* texto terciario */
+  --color-blue: #4c8dff;
+  --color-blue-d: #2c6ae6;
+  --color-green: #35cf88;
+  --color-amber: #f5a524;
+  --color-red: #f0564a;
 }
 
-body {
-  @apply bg-slate-100 text-slate-900 antialiased;
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-panel font-sans text-fg antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+}
+
+/* Piezas repetidas: botones, campos y avisos. */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-blue-d text-white hover:bg-blue;
+  }
+  .btn-ghost {
+    @apply border border-line-2 text-fg hover:bg-white/5;
+  }
+  .btn-danger {
+    @apply text-red hover:bg-red/10;
+  }
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-mute;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line-2 bg-ink-2 px-3 py-2 text-fg outline-none transition placeholder:text-dim focus:border-blue focus:ring-2 focus:ring-blue/25;
+  }
+  .input[aria-invalid='true'] {
+    @apply border-red focus:ring-red/25;
+  }
+  .alert-error {
+    @apply rounded-lg border border-red/30 bg-red/10 px-3 py-2 text-sm text-red;
+  }
+  .notice {
+    @apply rounded-lg border border-blue/30 bg-blue/10 px-3 py-2 text-sm text-fg;
+  }
+  /* Rótulo pequeño en mayúsculas, como "VEHÍCULOS" en la landing */
+  .eyebrow {
+    @apply font-mono text-[10.5px] font-medium tracking-[0.08em] text-dim uppercase;
+  }
+}
+
+/* ---------- Mapa (Leaflet) ---------- */
+.fleet-map .leaflet-container {
+  background: #0f1318;
+  font-family: var(--font-sans);
+}
+/* Invierte el mapa claro de OSM y le baja color y brillo: calles grises sobre fondo grafito. */
+.fleet-map .map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.8) contrast(0.95);
+}
+.fleet-map .leaflet-control-attribution {
+  background: rgb(11 14 19 / 0.75);
+  color: var(--color-dim);
+  font-size: 10px;
+}
+.fleet-map .leaflet-control-attribution a {
+  color: var(--color-mute);
+}
+.fleet-map .leaflet-control-scale-line {
+  background: transparent;
+  border: 1.5px solid var(--color-dim);
+  border-top: 0;
+  color: var(--color-dim);
+  font: 400 10px/1.5 var(--font-mono);
+  text-align: center;
+}
+
+/*
+ * Marcador de vehículo (L.divIcon): halo + punto + placa.
+ * El elemento raíz mide 0×0 y queda sobre la coordenada; las piezas se centran en él.
+ * --c es el color del estado (o azul si está seleccionado).
+ */
+.vm-in {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.vm-halo,
+.vm-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--c);
+}
+.vm-halo {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  opacity: 0.2;
+}
+.vm-dot {
+  width: 15px;
+  height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.vm-label {
+  position: absolute;
+  left: 11px;
+  top: -24px;
+  white-space: nowrap;
+  font: 500 12px/1 var(--font-mono);
+  color: #dfe5ee;
+  text-shadow:
+    0 0 3px #0b0e13,
+    0 0 3px #0b0e13,
+    0 0 2px #0b0e13;
+  pointer-events: none;
+}
+/* Flecha de rumbo: gira con el curso que reporta el GPS (0° = norte). */
+.vm-dir {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: rotate(var(--r));
+}
+.vm-dir::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -20px;
+  border-inline: 4px solid transparent;
+  border-bottom: 6px solid var(--c);
+}
+.vm-in.is-selected .vm-halo {
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+}
+.vm-in.is-selected .vm-dot {
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-width: 3px;
+}
+.vm-in.is-selected .vm-label {
+  left: 15px;
+  top: -27px;
+}
+.vm-in.is-moving .vm-halo {
+  animation: vm-pulse 2s ease-out infinite;
+}
+@keyframes vm-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@keyframes live-dot {
+  50% {
+    opacity: 0.35;
+  }
+}
+.live-dot {
+  animation: live-dot 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vm-in.is-moving .vm-halo,
+  .live-dot {
+    animation: none;
+  }
 }
