@@ -83,7 +83,7 @@ El historial pertenece al vehículo: si se borra el dispositivo, las posiciones 
 
 ### Simular un dispositivo (sin celular)
 
-1. En el panel, abre "Conectar" en un vehículo y copia el identificador.
+1. En **Vehículos**, abre "Conectar" en un vehículo y copia el identificador.
 2. Con la API corriendo:
 
 ```bash
@@ -92,7 +92,7 @@ npm run simulate -- <identificador>                # una posición cada 5 s desd
 npm run simulate -- <identificador> --interval 2 --lat 6.2442 --lon -75.5812
 ```
 
-El mapa se actualiza cada 10 segundos. `Ctrl+C` detiene la simulación.
+El mapa consulta cada 5 segundos y desliza el marcador hasta la nueva posición. `Ctrl+C` detiene la simulación.
 
 ## Frontend
 
@@ -101,6 +101,15 @@ cd frontend
 npm install
 npm run dev                 # http://localhost:5173 (redirige /api al backend en :4000)
 ```
+
+| Ruta         | Pantalla                                                       |
+|--------------|----------------------------------------------------------------|
+| `/login`     | Inicio de sesión                                               |
+| `/register`  | Registro de cuenta personal                                    |
+| `/`          | Mapa en vivo: lista de vehículos, mapa y detalle del seleccionado |
+| `/vehiculos` | Vehículos: agregar, editar, eliminar y conectar el GPS            |
+
+El diseño sigue el panel de demostración de la landing (`Project-GPS`). En el mapa en vivo, los contadores (en movimiento, detenidos, sin señal) filtran la lista y el mapa; al pulsar un vehículo el mapa vuela hasta él y muestra su detalle.
 
 ## Pruebas
 

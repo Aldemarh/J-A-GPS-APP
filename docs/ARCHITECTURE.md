@@ -36,10 +36,10 @@ J&A-GPS-APP/
 ├── frontend/         React + Vite + Tailwind
 │   └── src/
 │       ├── api/          Cliente HTTP único (token, errores, sesión vencida)
-│       ├── context/      AuthContext (estado de sesión)
+│       ├── context/      AuthContext (sesión), FleetContext (datos de la flota compartidos)
 │       ├── hooks/        useVehicles, useDevices, useLatestPositions
-│       ├── components/   Formularios, modales, vehículos, dispositivos, mapa (Leaflet)
-│       └── pages/        Login, registro, panel, 404
+│       ├── components/   Menú (layout), lista/detalle/estados (fleet), vehículos, dispositivos, mapa
+│       └── pages/        Login, registro, mapa en vivo, vehículos, 404
 └── docs/             Documentación técnica
 ```
 
@@ -88,13 +88,33 @@ J&A-GPS-APP/
 - Se rechazan posiciones sin identificador, con coordenadas inválidas o con hora más de 10 min en el futuro. Un dato opcional fuera de rango (rumbo, batería…) se descarta sin perder la posición.
 - `recorded_at` es la hora del GPS y `received_at` la de llegada: el celular puede enviar tarde posiciones guardadas sin señal, y una posición atrasada no reemplaza a la última.
 - La tabla `positions` usa id `BIGINT` (es la que más crece) y una FK compuesta `(tenant_id, vehicle_id)` como en dispositivos. El historial es del vehículo: borrar el dispositivo deja `device_id` en NULL.
-- Hasta tener Socket.IO (etapa 6), el panel consulta `/api/positions/latest` cada 10 s con la pestaña visible.
+- Hasta tener Socket.IO (etapa 7), el mapa consulta `/api/positions/latest` cada 5 s con la pestaña visible.
+
+### Diseño
+- La plataforma sigue el panel de demostración de la landing (`Project-GPS/index.html`, sección «Experiencia del software»): tema grafito, fuentes Geist y Geist Mono, marca **J&A Tech**, acento azul, verde = en movimiento, ámbar = detenido, gris = sin señal.
+- Los colores y fuentes están como tokens en `frontend/src/index.css` (`@theme`), copiados de la landing; los botones, campos y avisos repetidos son clases (`.btn`, `.input`, `.alert-error`…). Si la landing cambia de paleta, se cambia ahí.
+- El menú solo muestra secciones que existen. Recorridos, Alertas, Zonas, Reportes y Usuarios (que sí aparecen en la landing) se agregan cuando se construyan.
+- No se muestran datos que el GPS no envía: el detalle omite «Motor», «Ubicación» (dirección) y «Recorrido de hoy» de la landing hasta tener ignición, geocodificación e historial. La actividad reciente llegará con las alertas.
 
 ### Mapa
-- Leaflet + teselas de OpenStreetMap, con su atribución obligatoria.
-- Marcadores con `CircleMarker` (los íconos por defecto de Leaflet necesitan configuración extra con Vite). El mapa se encuadra en los vehículos solo la primera vez.
+- Leaflet + teselas de OpenStreetMap oscurecidas con un filtro CSS (`.map-tiles-dark`). Los mapas oscuros ya hechos (CARTO, Stadia) exigen clave de API: CARTO sin clave devuelve teselas con la marca «API KEY REQUIRED».
+- Marcadores `L.divIcon` manejados directamente con Leaflet (`VehicleMarker`): halo + punto + placa, flecha de rumbo si se mueve, y halo pulsante en los que están en movimiento. Al llegar una posición nueva el marcador **se desliza** 4,5 s hasta ella en vez de saltar (no se anima si el salto supera 3 km ni con «reducir movimiento»).
+- Interacción: clic en un marcador o en la lista selecciona el vehículo; desde la lista el mapa vuela hasta él; si el seleccionado se acerca al borde mientras avanza, el mapa lo acompaña; clic en el mapa vacío quita la selección. Controles propios de zoom y «ver todos», y escala en metros.
+- El mapa se encuadra en los vehículos solo la primera vez; después el usuario decide dónde mirar.
 - No se muestran ubicaciones inventadas: sin dispositivo GPS conectado, el mapa lo indica.
-- Para producción con tráfico real hay que usar un proveedor de teselas propio o de pago: la política de uso de los servidores públicos de OSM no permite cargas altas.
+- Para producción con tráfico real hay que usar un proveedor de teselas propio o de pago: la política de uso de los servidores públicos de OSM no permite cargas altas. Con un proveedor oscuro basta cambiar `TILES_URL` en `FleetMap.jsx` y quitar el filtro.
+
+### Mapa en vivo y estado de los vehículos
+- Las pantallas privadas comparten un menú (`AppLayout`): lateral en escritorio, pestañas en celular. **Mapa en vivo** (`/`) es para monitorear y **Vehículos** (`/vehiculos`) para administrar.
+- Mapa en vivo, como en la landing: lista de vehículos (con buscador por nombre o placa), mapa con contadores que también filtran, y detalle del seleccionado a la derecha. Entre 1024 y 1280 px el detalle va sobre la lista; en celular, mapa arriba y lista debajo.
+- Vehículos, dispositivos y últimas posiciones se cargan una sola vez en `FleetContext`, dentro de la ruta protegida: cambiar de sección no repite peticiones y al cerrar sesión se descarta todo.
+- El estado se calcula en el frontend (`components/fleet/fleetStatus.js`) con la hora del GPS (`recorded_at`):
+  - **Sin GPS:** el vehículo no tiene dispositivo.
+  - **Sin señal:** tiene dispositivo pero no ha enviado datos o el último tiene más de 10 min.
+  - **En movimiento:** dato reciente con velocidad ≥ 5 km/h (por debajo se considera ruido del GPS).
+  - **Detenido:** dato reciente con velocidad menor.
+- Los estados se recalculan cada 15 s aunque no lleguen datos, para que un GPS que deja de reportar pase a "sin señal".
+- El color del estado siempre va acompañado de su nombre (lista, detalle, contadores del mapa y título del marcador). El vehículo seleccionado se pinta de azul en el mapa.
 
 ### Base de datos (Neon)
 - Desarrollo usa el branch `dev` de Neon, base `jya_gps`.
@@ -106,10 +126,11 @@ J&A-GPS-APP/
 3. ✅ Vehículos (CRUD por cuenta) y mapa base.
 4. ✅ Dispositivos GPS: registro y vínculo con el vehículo.
 5. ✅ Recepción de posiciones (protocolo de Traccar Client) y última ubicación en el mapa. Probado con el simulador; la prueba con un celular real queda para cuando la API esté publicada con HTTPS (en red local exige IP, mismo Wi‑Fi y permiso de red local en iOS).
-6. Tiempo real con Socket.IO: el marcador se mueve solo; estado en línea / sin señal.
-7. Historial de recorridos: trayecto por fechas, distancia y paradas.
-8. Mi cuenta: perfil, cambio de contraseña y recuperación por correo.
-9. Alertas básicas: exceso de velocidad, sin señal y geocercas.
-10. Despliegue: servidor público con HTTPS, dominio y renovación de sesión (refresh tokens).
+6. ✅ Mapa en vivo con el diseño de la landing: menú, contadores de la flota, estado y detalle de cada vehículo, marcadores que se deslizan.
+7. Tiempo real con Socket.IO: las posiciones llegan al instante, sin consultar cada 5 s.
+8. Historial de recorridos: trayecto por fechas, distancia y paradas.
+9. Mi cuenta: perfil, cambio de contraseña y recuperación por correo.
+10. Alertas básicas: exceso de velocidad, sin señal y geocercas.
+11. Despliegue: servidor público con HTTPS, dominio y renovación de sesión (refresh tokens).
 
 Después: plan de empresa (usuarios, roles, invitaciones, suscripciones).

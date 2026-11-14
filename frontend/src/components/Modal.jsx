@@ -15,16 +15,16 @@ export default function Modal({ title, onClose, closeDisabled = false, children 
 
   return (
     <div
-      className="fixed inset-0 z-[1100] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onMouseDown={(e) => e.target === e.currentTarget && !closeDisabled && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-6 shadow-xl sm:max-w-lg sm:rounded-2xl"
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-line-2 bg-ink-2 p-6 shadow-2xl sm:max-w-lg sm:rounded-2xl"
       >
-        <h2 id={titleId} className="text-lg font-bold text-slate-900">
+        <h2 id={titleId} className="text-lg font-semibold tracking-tight text-fg">
           {title}
         </h2>
         {children}
