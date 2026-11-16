@@ -191,6 +191,58 @@
     opacity: 0;
   }
 }
+
+/*
+ * Puntos de un recorrido (L.divIcon): inicio y fin con punto + texto; paradas numeradas.
+ * Mismo esquema que .vm-*: raíz de 0×0 sobre la coordenada; --c es el color.
+ */
+.tm-in {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.tm-dot,
+.tm-num {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--c);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.tm-dot {
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+}
+.tm-num {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  font: 600 11px/1 var(--font-mono);
+  color: #0b0e13;
+}
+.tm-label {
+  position: absolute;
+  left: 10px;
+  top: -22px;
+  white-space: nowrap;
+  font: 500 11px/1 var(--font-mono);
+  color: #dfe5ee;
+  text-shadow:
+    0 0 3px #0b0e13,
+    0 0 3px #0b0e13,
+    0 0 2px #0b0e13;
+  pointer-events: none;
+}
+.tm-in.is-selected .tm-dot,
+.tm-in.is-selected .tm-num {
+  box-shadow:
+    0 0 0 4px rgb(76 141 255 / 0.45),
+    0 1px 4px rgb(0 0 0 / 0.5);
+}
+
 @keyframes live-dot {
   50% {
     opacity: 0.35;

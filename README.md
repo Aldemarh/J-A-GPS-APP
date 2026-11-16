@@ -78,8 +78,11 @@ Un vehículo tiene como máximo un dispositivo. Al borrar el vehículo se borra 
 |------------|--------------------------|-----------------------------------------------------------------|----------------------------|
 | GET / POST | `/api/ingest/osmand`     | Recibe posiciones del dispositivo (protocolo OsmAnd, Traccar Client) | Identificador del dispositivo |
 | GET        | `/api/positions/latest`  | Última posición de cada vehículo de la cuenta                   | JWT                        |
+| GET        | `/api/vehicles/:id/track?from=…&to=…` | Recorrido del vehículo entre dos fechas ISO 8601: trayecto, resumen y paradas | JWT |
 
 El historial pertenece al vehículo: si se borra el dispositivo, las posiciones se conservan.
+
+El recorrido incluye `from` y excluye `to` (máximo 7 días) y devuelve `summary` (distancia, tiempo en movimiento y detenido, velocidad máxima), `stops` (quieto 3 min o más) y `points` para dibujar (hasta 5.000; el resumen usa todas las posiciones). Ejemplo: `/api/vehicles/<id>/track?from=2026-11-16T00:00:00-05:00&to=2026-11-17T00:00:00-05:00`.
 
 ### Simular un dispositivo (sin celular)
 
@@ -109,6 +112,7 @@ Opcional: para ver el mapa con Google Maps, copia `frontend/.env.example` como `
 | `/login`     | Inicio de sesión                                               |
 | `/register`  | Registro de cuenta personal                                    |
 | `/`          | Mapa en vivo: lista de vehículos, mapa y detalle del seleccionado |
+| `/recorridos` | Recorridos: trayecto de un vehículo por día, resumen y paradas (`?vehiculo=<id>&fecha=AAAA-MM-DD`) |
 | `/vehiculos` | Vehículos: agregar, editar, eliminar y conectar el GPS            |
 
 El diseño sigue el panel de demostración de la landing (`Project-GPS`). En el mapa en vivo, los contadores (en movimiento, detenidos, sin señal) filtran la lista y el mapa; al pulsar un vehículo el mapa vuela hasta él y muestra su detalle.

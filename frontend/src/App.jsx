@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import VehiclesPage from './pages/VehiclesPage.jsx';
+import TracksPage from './pages/TracksPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/recorridos" element={<TracksPage />} />
           <Route path="/vehiculos" element={<VehiclesPage />} />
         </Route>
       </Route>
