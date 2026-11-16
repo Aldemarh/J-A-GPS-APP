@@ -27,7 +27,7 @@ J&A-GPS-APP/
 │   │   │   ├── vehicles/  CRUD de vehículos, siempre filtrado por tenant
 │   │   │   ├── devices/   Dispositivos GPS vinculados a vehículos
 │   │   │   ├── ingest/    Recepción de posiciones desde los equipos (sin JWT)
-│   │   │   └── positions/ Consulta de posiciones (última ubicación por vehículo)
+│   │   │   └── positions/ Consulta de posiciones: última ubicación y recorridos (track.js)
 │   │   ├── utils/        AppError, asyncHandler
 │   │   ├── app.js        Configura Express (sin abrir puerto; testeable)
 │   │   └── server.js     Arranque, verificación de BD, cierre ordenado
@@ -37,9 +37,9 @@ J&A-GPS-APP/
 │   └── src/
 │       ├── api/          Cliente HTTP único (token, errores, sesión vencida)
 │       ├── context/      AuthContext (sesión), FleetContext (datos de la flota compartidos)
-│       ├── hooks/        useVehicles, useDevices, useLatestPositions
-│       ├── components/   Menú (layout), lista/detalle/estados (fleet), vehículos, dispositivos, mapa
-│       └── pages/        Login, registro, mapa en vivo, vehículos, 404
+│       ├── hooks/        useVehicles, useDevices, useLatestPositions, useTrack
+│       ├── components/   Menú (layout), lista/detalle/estados (fleet), vehículos, dispositivos, mapas (map), recorridos (tracks)
+│       └── pages/        Login, registro, mapa en vivo, recorridos, vehículos, 404
 └── docs/             Documentación técnica
 ```
 
@@ -108,7 +108,7 @@ J&A-GPS-APP/
 - `FleetMap.jsx` elige el proveedor: con `VITE_GOOGLE_MAPS_API_KEY` en `frontend/.env.local` usa Google (`GoogleFleetMap.jsx`) y muestra un selector **Google / OSM** sobre los botones de zoom; sin la key, solo OpenStreetMap (`LeafletFleetMap.jsx`). Si Google no puede mostrar el mapa (key inválida, sin permiso para el sitio, sin facturación o límite de la Demo Key), vuelve solo a OpenStreetMap y lo avisa con el código de error. Google informa esos errores solo con un mensaje en la consola (`Google Maps JavaScript API error: <Código>`), sin llamar a `gm_authFailure`; `GoogleFleetMap.jsx` escucha ese mensaje.
 - Los dos mapas comparten encuadre, marcador (HTML de `markerHtml` y estilos `.vm-*`), animación y controles (`mapShared.js`, `MapControls.jsx`): cambiar de proveedor no cambia la experiencia.
 - Google: librería `@vis.gl/react-google-maps`, marcadores `AdvancedMarkerElement` (exigen un Map ID; por defecto `DEMO_MAP_ID`) y `colorScheme` oscuro. `reuseMaps` evita crear (y pagar) un mapa nuevo cada vez que se vuelve a la pantalla.
-- Para probar sin costo sirve la **Maps Demo Key** (sin tarjeta, con límite diario: al alcanzarlo el mapa se pausa hasta el día siguiente, sin cobro). Para producción: cuenta con facturación, key restringida al dominio, Map ID propio con estilo grafito (sin íconos de lugares) y cuota diaria como tope.
+- Para probar sin costo sirve la **Maps Demo Key** (sin tarjeta). Su límite de uso no está documentado: en las pruebas se cortó y volvió varias veces en pocos minutos, siempre con `BillingNotEnabledMapError`, y la app pasó sola a OpenStreetMap. Activar la facturación en Colombia pide un prepago no reembolsable; por ahora la key está desactivada y se usa solo OpenStreetMap. Para producción: cuenta con facturación, key restringida al dominio, Map ID propio con estilo grafito (sin íconos de lugares) y cuota diaria como tope.
 - Al elegir proveedor se borra el otro y el selector.
 
 ### Mapa en vivo y estado de los vehículos
@@ -123,6 +123,16 @@ J&A-GPS-APP/
 - Los estados se recalculan cada 15 s aunque no lleguen datos, para que un GPS que deja de reportar pase a "sin señal".
 - El color del estado siempre va acompañado de su nombre (lista, detalle, contadores del mapa y título del marcador). El vehículo seleccionado se pinta de azul en el mapa.
 
+### Recorridos
+- `GET /api/vehicles/:id/track?from&to` (rango `[from, to)`, máximo 7 días). El cálculo está en `backend/src/modules/positions/track.js`, con funciones puras y pruebas propias (`test/track.test.js`):
+  - **Limpieza:** se descartan posiciones con la misma hora que la anterior y saltos imposibles (más de 250 km/h desde la última posición aceptada).
+  - **Movimiento:** un tramo entre dos posiciones es movimiento si alguna marca ≥ 5 km/h (mismo umbral del mapa en vivo); si el GPS no envía velocidad, se usa la calculada. Un desplazamiento de 500 m o más también es movimiento aunque marque 0 km/h (el celular dejó de enviar mientras se conducía).
+  - **Distancia:** suma de los tramos en movimiento; el temblor del GPS estacionado no suma.
+  - **Paradas:** tramos quietos seguidos que suman 3 min o más; los semáforos y trancones cortos no cuentan. El tramo que une un punto en marcha con uno quieto cuenta como movimiento, así que una parada empieza en la primera posición quieta.
+  - **Puntos para dibujar:** hasta 5.000 (uno de cada k, siempre con el último); el resumen usa todos. Se leen como máximo 100.000 posiciones por consulta (`truncated` avisa si se llegó al tope).
+- Pantalla **Recorridos** (`/recorridos?vehiculo=<id>&fecha=AAAA-MM-DD`): el día es del calendario local del navegador y la selección va en la URL (se puede compartir y el botón Atrás funciona). Resumen y línea de tiempo (inicio, paradas, fin) a la izquierda; al pulsar un punto el mapa vuela hasta él. Si la fecha es hoy, el recorrido se vuelve a pedir cada minuto con la pestaña visible. Desde el detalle del mapa en vivo, «Ver recorrido» abre el del vehículo.
+- El mapa del recorrido (`TrackMap.jsx`) usa Leaflet y OpenStreetMap. Si se activa Google Maps, hará falta su versión de Google, como en el mapa en vivo.
+
 ### Base de datos (Neon)
 - Desarrollo usa el branch `dev` de Neon, base `jya_gps`.
 - El branch `production`, base `neondb`, tiene un esquema anterior distinto (accounts, memberships, PostGIS/TimescaleDB). Las migraciones de este repo **no** se aplican ahí. Unificar ambos diseños es una decisión pendiente.
@@ -135,7 +145,7 @@ J&A-GPS-APP/
 5. ✅ Recepción de posiciones (protocolo de Traccar Client) y última ubicación en el mapa. Probado con el simulador; la prueba con un celular real queda para cuando la API esté publicada con HTTPS (en red local exige IP, mismo Wi‑Fi y permiso de red local en iOS).
 6. ✅ Mapa en vivo con el diseño de la landing: menú, contadores de la flota, estado y detalle de cada vehículo, marcadores que se deslizan.
 7. Tiempo real con Socket.IO: las posiciones llegan al instante, sin consultar cada 5 s.
-8. Historial de recorridos: trayecto por fechas, distancia y paradas.
+8. ✅ Historial de recorridos: trayecto por día, distancia, tiempos y paradas.
 9. Mi cuenta: perfil, cambio de contraseña y recuperación por correo.
 10. Alertas básicas: exceso de velocidad, sin señal y geocercas.
 11. Despliegue: servidor público con HTTPS, dominio y renovación de sesión (refresh tokens).

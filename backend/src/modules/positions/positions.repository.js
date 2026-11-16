@@ -23,6 +23,20 @@ export async function insertPosition(client, p) {
   );
 }
 
+// Posiciones de un vehículo en [from, to), de la más antigua a la más reciente (usa el índice
+// vehicle_id + recorded_at). `limit` protege la memoria si un equipo envió muchísimos datos.
+export async function trackByVehicle(tenantId, vehicleId, from, to, limit) {
+  const { rows } = await query(
+    `SELECT recorded_at, latitude, longitude, speed_kmh, course
+       FROM positions
+      WHERE tenant_id = $1 AND vehicle_id = $2 AND recorded_at >= $3 AND recorded_at < $4
+      ORDER BY recorded_at ASC
+      LIMIT $5`,
+    [tenantId, vehicleId, from, to, limit],
+  );
+  return rows;
+}
+
 // Última posición de cada vehículo de la cuenta (usa el índice vehicle_id + recorded_at).
 export async function latestByTenant(tenantId) {
   const { rows } = await query(

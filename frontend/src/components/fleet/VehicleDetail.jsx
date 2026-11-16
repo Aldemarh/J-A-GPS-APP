@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import StatusText from './StatusText.jsx';
 import { FLEET_STATUS, formatAgo, isOnline } from './fleetStatus.js';
-import { IconClose, IconCrosshair, IconExternal } from '../icons.jsx';
+import { IconClose, IconCrosshair, IconExternal, IconRoute } from '../icons.jsx';
 
 function Row({ label, children }) {
   return (
@@ -81,6 +81,10 @@ export default function VehicleDetail({ row, now, canEdit, onCenter, onClose }) 
             <IconCrosshair className="size-4" />
             Centrar en el mapa
           </button>
+          <Link to={`/recorridos?vehiculo=${vehicle.id}`} className="btn btn-ghost px-3 py-1.5 text-xs">
+            <IconRoute className="size-4" />
+            Ver recorrido
+          </Link>
           <a
             href={`https://www.google.com/maps?q=${position.latitude},${position.longitude}`}
             target="_blank"

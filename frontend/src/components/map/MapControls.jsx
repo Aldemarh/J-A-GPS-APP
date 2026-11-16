@@ -20,7 +20,15 @@ function MapButton({ label, onClick, disabled, children }) {
  * y el aviso centrado abajo. `children` se pone encima de los botones.
  * z-index por encima de las capas del mapa y por debajo de los modales.
  */
-export default function MapControls({ onZoomIn, onZoomOut, onFitAll, fitDisabled, message, children }) {
+export default function MapControls({
+  onZoomIn,
+  onZoomOut,
+  onFitAll,
+  fitDisabled,
+  fitLabel = 'Ver todos los vehículos',
+  message,
+  children,
+}) {
   return (
     <>
       <div className="absolute right-3 bottom-8 z-[500] flex flex-col items-end gap-2">
@@ -32,7 +40,7 @@ export default function MapControls({ onZoomIn, onZoomOut, onFitAll, fitDisabled
           <MapButton label="Alejar" onClick={onZoomOut}>
             <IconMinus className="size-4" />
           </MapButton>
-          <MapButton label="Ver todos los vehículos" onClick={onFitAll} disabled={fitDisabled}>
+          <MapButton label={fitLabel} onClick={onFitAll} disabled={fitDisabled}>
             <IconExpand className="size-4" />
           </MapButton>
         </div>

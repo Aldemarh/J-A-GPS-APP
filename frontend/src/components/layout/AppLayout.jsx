@@ -2,12 +2,13 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { FleetProvider } from '../../context/FleetContext.jsx';
 import Brand from '../Brand.jsx';
-import { IconGrid, IconLogout, IconPin } from '../icons.jsx';
+import { IconGrid, IconLogout, IconPin, IconRoute } from '../icons.jsx';
 
 // Secciones del menú. Agregar una pantalla = una línea aquí + su ruta en App.jsx.
-// Solo se listan las que ya existen (Recorridos, Alertas, Zonas... se suman al construirlas).
+// Solo se listan las que ya existen (Alertas, Zonas... se suman al construirlas).
 const NAV_ITEMS = [
   { to: '/', label: 'Mapa en vivo', Icon: IconPin, end: true },
+  { to: '/recorridos', label: 'Recorridos', Icon: IconRoute },
   { to: '/vehiculos', label: 'Vehículos', Icon: IconGrid },
 ];
 
@@ -24,7 +25,7 @@ const railLinkClass = ({ isActive }) =>
   }`;
 
 const tabLinkClass = ({ isActive }) =>
-  `flex items-center gap-2 border-b-2 px-3 pb-2.5 pt-1 text-sm transition ${
+  `flex shrink-0 items-center gap-2 border-b-2 px-3 pb-2.5 pt-1 text-sm whitespace-nowrap transition ${
     isActive ? 'border-blue text-white' : 'border-transparent text-mute hover:text-fg'
   }`;
 
@@ -84,7 +85,8 @@ export default function AppLayout() {
               Salir
             </button>
           </div>
-          <nav aria-label="Principal" className="mt-2 flex gap-1 px-2">
+          {/* Con tres o más secciones las pestañas pueden no caber en un celular angosto: se desplazan. */}
+          <nav aria-label="Principal" className="mt-2 flex gap-1 overflow-x-auto px-2">
             {NAV_ITEMS.map(({ to, label, Icon, end }) => (
               <NavLink key={to} to={to} end={end} className={tabLinkClass}>
                 <Icon className="size-4" />
