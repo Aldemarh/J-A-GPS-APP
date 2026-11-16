@@ -102,6 +102,8 @@ npm install
 npm run dev                 # http://localhost:5173 (redirige /api al backend en :4000)
 ```
 
+Opcional: para ver el mapa con Google Maps, copia `frontend/.env.example` como `frontend/.env.local` y pon la key en `VITE_GOOGLE_MAPS_API_KEY` (para pruebas sirve la [Maps Demo Key](https://developers.google.com/maps/demo-key), sin tarjeta). Reinicia `npm run dev` después de cambiarla.
+
 | Ruta         | Pantalla                                                       |
 |--------------|----------------------------------------------------------------|
 | `/login`     | Inicio de sesión                                               |

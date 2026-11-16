@@ -102,7 +102,14 @@ J&A-GPS-APP/
 - Interacción: clic en un marcador o en la lista selecciona el vehículo; desde la lista el mapa vuela hasta él; si el seleccionado se acerca al borde mientras avanza, el mapa lo acompaña; clic en el mapa vacío quita la selección. Controles propios de zoom y «ver todos», y escala en metros.
 - El mapa se encuadra en los vehículos solo la primera vez; después el usuario decide dónde mirar.
 - No se muestran ubicaciones inventadas: sin dispositivo GPS conectado, el mapa lo indica.
-- Para producción con tráfico real hay que usar un proveedor de teselas propio o de pago: la política de uso de los servidores públicos de OSM no permite cargas altas. Con un proveedor oscuro basta cambiar `TILES_URL` en `FleetMap.jsx` y quitar el filtro.
+- Para producción con tráfico real hay que usar un proveedor de teselas propio o de pago: la política de uso de los servidores públicos de OSM no permite cargas altas. Con un proveedor oscuro basta cambiar `TILES_URL` en `LeafletFleetMap.jsx` y quitar el filtro.
+
+### Comparación Google Maps / OpenStreetMap (en curso)
+- `FleetMap.jsx` elige el proveedor: con `VITE_GOOGLE_MAPS_API_KEY` en `frontend/.env.local` usa Google (`GoogleFleetMap.jsx`) y muestra un selector **Google / OSM** sobre los botones de zoom; sin la key, solo OpenStreetMap (`LeafletFleetMap.jsx`). Si Google no puede mostrar el mapa (key inválida, sin permiso para el sitio, sin facturación o límite de la Demo Key), vuelve solo a OpenStreetMap y lo avisa con el código de error. Google informa esos errores solo con un mensaje en la consola (`Google Maps JavaScript API error: <Código>`), sin llamar a `gm_authFailure`; `GoogleFleetMap.jsx` escucha ese mensaje.
+- Los dos mapas comparten encuadre, marcador (HTML de `markerHtml` y estilos `.vm-*`), animación y controles (`mapShared.js`, `MapControls.jsx`): cambiar de proveedor no cambia la experiencia.
+- Google: librería `@vis.gl/react-google-maps`, marcadores `AdvancedMarkerElement` (exigen un Map ID; por defecto `DEMO_MAP_ID`) y `colorScheme` oscuro. `reuseMaps` evita crear (y pagar) un mapa nuevo cada vez que se vuelve a la pantalla.
+- Para probar sin costo sirve la **Maps Demo Key** (sin tarjeta, con límite diario: al alcanzarlo el mapa se pausa hasta el día siguiente, sin cobro). Para producción: cuenta con facturación, key restringida al dominio, Map ID propio con estilo grafito (sin íconos de lugares) y cuota diaria como tope.
+- Al elegir proveedor se borra el otro y el selector.
 
 ### Mapa en vivo y estado de los vehículos
 - Las pantallas privadas comparten un menú (`AppLayout`): lateral en escritorio, pestañas en celular. **Mapa en vivo** (`/`) es para monitorear y **Vehículos** (`/vehiculos`) para administrar.

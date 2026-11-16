@@ -74,7 +74,7 @@
   }
 }
 
-/* ---------- Mapa (Leaflet) ---------- */
+/* ---------- Mapa (Leaflet; los marcadores .vm-* sirven también para Google) ---------- */
 .fleet-map .leaflet-container {
   background: #0f1318;
   font-family: var(--font-sans);
@@ -109,6 +109,12 @@
   position: absolute;
   left: 0;
   top: 0;
+}
+/* En Google Maps el contenido del marcador se ancla por su borde inferior: con 0×0 queda sobre la coordenada. */
+.vm-google {
+  position: relative;
+  width: 0;
+  height: 0;
 }
 .vm-halo,
 .vm-dot {
