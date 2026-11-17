@@ -99,6 +99,33 @@ export function IconClose(props) {
   );
 }
 
+// Recorrido: de un punto a otro por un camino con curvas.
+export function IconRoute(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="6" cy="18" r="2" />
+      <circle cx="18" cy="6" r="2" />
+      <path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16" />
+    </Icon>
+  );
+}
+
+export function IconChevronLeft(props) {
+  return (
+    <Icon {...props}>
+      <path d="M15 5l-7 7 7 7" />
+    </Icon>
+  );
+}
+
+export function IconChevronRight(props) {
+  return (
+    <Icon {...props}>
+      <path d="M9 5l7 7-7 7" />
+    </Icon>
+  );
+}
+
 export function IconExternal(props) {
   return (
     <Icon {...props}>

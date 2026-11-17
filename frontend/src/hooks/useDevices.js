@@ -10,22 +10,32 @@ export function useDevices() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setStatus('loading');
-    setError('');
-    try {
-      const data = await devicesApi.list();
-      setDevices(data.devices);
-      setStatus('ready');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los dispositivos.');
-      setStatus('error');
-    }
-  }, []);
+  // El estado cambia solo cuando llega la respuesta (el "cargando" inicial ya está en useState).
+  const fetchDevices = useCallback(
+    () =>
+      devicesApi.list().then(
+        (data) => {
+          setDevices(data.devices);
+          setStatus('ready');
+        },
+        (err) => {
+          setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los dispositivos.');
+          setStatus('error');
+        },
+      ),
+    [],
+  );
 
   useEffect(() => {
-    load();
-  }, [load]);
+    fetchDevices();
+  }, [fetchDevices]);
+
+  // Reintentar (lo pide el usuario): vuelve a mostrar "cargando".
+  const reload = useCallback(() => {
+    setStatus('loading');
+    setError('');
+    return fetchDevices();
+  }, [fetchDevices]);
 
   const create = useCallback(async (payload) => {
     const { device } = await devicesApi.create(payload);
@@ -43,5 +53,5 @@ export function useDevices() {
     setDevices((list) => list.filter((d) => d.vehicleId !== vehicleId));
   }, []);
 
-  return { devices, status, error, reload: load, create, remove, forgetVehicle };
+  return { devices, status, error, reload, create, remove, forgetVehicle };
 }

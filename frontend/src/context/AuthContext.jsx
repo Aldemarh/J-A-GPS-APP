@@ -5,15 +5,12 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // 'loading' mientras se verifica un token guardado al abrir la app.
-  const [status, setStatus] = useState('loading');
+  // 'loading' mientras se verifica un token guardado al abrir la app; sin token, directo a 'anonymous'.
+  const [status, setStatus] = useState(() => (tokenStorage.get() ? 'loading' : 'anonymous'));
 
   // Al cargar la app, si hay token guardado, se valida contra /auth/me.
   useEffect(() => {
-    if (!tokenStorage.get()) {
-      setStatus('anonymous');
-      return;
-    }
+    if (!tokenStorage.get()) return;
     authApi
       .me()
       .then(({ user: profile }) => {

@@ -94,6 +94,11 @@ export const devicesApi = {
 
 export const positionsApi = {
   latest: () => apiRequest('/positions/latest'),
+  // Recorrido de un vehículo en [from, to) (Date): trayecto, resumen y paradas.
+  track: (vehicleId, from, to) =>
+    apiRequest(
+      `/vehicles/${vehicleId}/track?${new URLSearchParams({ from: from.toISOString(), to: to.toISOString() })}`,
+    ),
 };
 
 export const authApi = {
