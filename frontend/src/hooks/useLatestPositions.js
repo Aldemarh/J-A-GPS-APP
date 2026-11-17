@@ -15,16 +15,19 @@ export function useLatestPositions() {
   const [status, setStatus] = useState('loading');
   const [updatedAt, setUpdatedAt] = useState(null);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await positionsApi.latest();
-      setPositions(data.positions);
-      setUpdatedAt(new Date());
-      setStatus('ready');
-    } catch {
-      setStatus('error');
-    }
-  }, []);
+  // El estado cambia solo cuando llega la respuesta.
+  const load = useCallback(
+    () =>
+      positionsApi.latest().then(
+        (data) => {
+          setPositions(data.positions);
+          setUpdatedAt(new Date());
+          setStatus('ready');
+        },
+        () => setStatus('error'),
+      ),
+    [],
+  );
 
   useEffect(() => {
     load();

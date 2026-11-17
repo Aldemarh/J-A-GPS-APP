@@ -10,22 +10,32 @@ export function useVehicles() {
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    setStatus('loading');
-    setError('');
-    try {
-      const data = await vehiclesApi.list();
-      setVehicles(data.vehicles);
-      setStatus('ready');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los vehículos.');
-      setStatus('error');
-    }
-  }, []);
+  // El estado cambia solo cuando llega la respuesta (el "cargando" inicial ya está en useState).
+  const fetchVehicles = useCallback(
+    () =>
+      vehiclesApi.list().then(
+        (data) => {
+          setVehicles(data.vehicles);
+          setStatus('ready');
+        },
+        (err) => {
+          setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los vehículos.');
+          setStatus('error');
+        },
+      ),
+    [],
+  );
 
   useEffect(() => {
-    load();
-  }, [load]);
+    fetchVehicles();
+  }, [fetchVehicles]);
+
+  // Reintentar (lo pide el usuario): vuelve a mostrar "cargando".
+  const reload = useCallback(() => {
+    setStatus('loading');
+    setError('');
+    return fetchVehicles();
+  }, [fetchVehicles]);
 
   const create = useCallback(async (payload) => {
     const { vehicle } = await vehiclesApi.create(payload);
@@ -44,5 +54,5 @@ export function useVehicles() {
     setVehicles((list) => list.filter((v) => v.id !== id));
   }, []);
 
-  return { vehicles, status, error, reload: load, create, update, remove };
+  return { vehicles, status, error, reload, create, update, remove };
 }

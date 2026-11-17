@@ -1,5 +1,4 @@
-import { FLEET_STATUS, SELECTED_COLOR } from '../fleet/fleetStatus.js';
-import { formatDistance, formatDuration, formatTime } from './trackFormat.js';
+import { formatDistance, formatDuration } from './trackFormat.js';
 
 function Stat({ label, value, unit }) {
   return (
@@ -13,33 +12,9 @@ function Stat({ label, value, unit }) {
   );
 }
 
-/** Puntos de la línea de tiempo: inicio, paradas y fin, en orden. */
-export function timelineItems(data, endLabel) {
-  const { summary, stops, points } = data;
-  if (points.length === 0) return [];
-  const first = points[0];
-  const last = points.at(-1);
-  const items = [
-    { key: 'start', title: 'Inicio', time: formatTime(summary.startedAt), color: FLEET_STATUS.moving.color, point: [first.latitude, first.longitude] },
-    ...stops.map((s, i) => ({
-      key: i,
-      title: `Parada ${i + 1}`,
-      time: `${formatTime(s.startedAt)} – ${formatTime(s.endedAt)}`,
-      detail: formatDuration(s.durationSeconds),
-      color: FLEET_STATUS.stopped.color,
-      number: i + 1,
-      point: [s.latitude, s.longitude],
-    })),
-  ];
-  if (points.length > 1) {
-    items.push({ key: 'end', title: endLabel, time: formatTime(summary.endedAt), color: SELECTED_COLOR, point: [last.latitude, last.longitude] });
-  }
-  return items;
-}
-
 /**
  * Resumen del día y línea de tiempo. Pulsar un punto lo selecciona y el mapa va hasta él.
- * onSelect(item) recibe un elemento de timelineItems.
+ * items: los de timelineItems (timeline.js); onSelect(item) recibe uno de ellos.
  */
 export default function TrackPanel({ data, items, selected, onSelect }) {
   const { summary, simplified, truncated } = data;

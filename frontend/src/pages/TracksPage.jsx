@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFleet } from '../context/FleetContext.jsx';
 import { useTrack } from '../hooks/useTrack.js';
 import PageBar from '../components/layout/PageBar.jsx';
 import TrackMap from '../components/tracks/TrackMap.jsx';
-import TrackPanel, { timelineItems } from '../components/tracks/TrackPanel.jsx';
+import TrackPanel from '../components/tracks/TrackPanel.jsx';
+import { timelineItems } from '../components/tracks/timeline.js';
 import { addDays, formatDay, isDayString, todayString } from '../components/tracks/trackFormat.js';
 import { IconChevronLeft, IconChevronRight } from '../components/icons.jsx';
 
@@ -40,27 +41,28 @@ export default function TracksPage() {
   const endLabel = live ? 'Último dato' : 'Fin';
   const items = useMemo(() => (data ? timelineItems(data, endLabel) : []), [data, endLabel]);
 
-  const [selected, setSelected] = useState(null);
-  // { point }: objeto nuevo en cada pedido, para que el mapa vuele aunque se repita el punto.
-  const [focus, setFocus] = useState(null);
+  // Punto elegido y pedido de "ir a" ({ point }: objeto nuevo en cada pedido, para que el mapa vuele
+  // aunque se repita el punto). Se guardan con la clave del recorrido: al cambiar de vehículo o de
+  // día dejan de aplicar solos, sin limpiarlos en un efecto.
   const trackKey = `${vehicle?.id}|${day}`;
-  useEffect(() => {
-    setSelected(null);
-    setFocus(null);
-  }, [trackKey]);
+  const [view, setView] = useState({ key: null, selected: null, focus: null });
+  const selected = view.key === trackKey ? view.selected : null;
+  const focus = view.key === trackKey ? view.focus : null;
 
+  // Cambiar de vehículo o de día desde los controles empieza sin nada seleccionado.
   function choose(next) {
     const merged = { vehiculo: vehicle?.id, fecha: day, ...next };
     setParams(Object.fromEntries(Object.entries(merged).filter(([, v]) => v)));
+    setView({ key: null, selected: null, focus: null });
   }
 
   function selectItem(item) {
-    setSelected(item.key);
-    setFocus({ point: item.point });
+    setView({ key: trackKey, selected: item.key, focus: { point: item.point } });
   }
 
   // Desde el mapa: se marca en la línea de tiempo sin mover el mapa (el usuario ya está mirando ahí).
-  const selectFromMap = (key) => setSelected(key);
+  const selectFromMap = (key) =>
+    setView((v) => ({ key: trackKey, selected: key, focus: v.key === trackKey ? v.focus : null }));
 
   const fleetLoading = vehicles.status === 'loading' || devices.status === 'loading';
   const fleetError = vehicles.status === 'error' ? vehicles.error : null;

@@ -42,7 +42,7 @@ async function migrate() {
       count++;
     } catch (err) {
       await client.query('ROLLBACK');
-      throw new Error(`Falló la migración ${file}: ${err.message}`);
+      throw new Error(`Falló la migración ${file}: ${err.message}`, { cause: err });
     } finally {
       client.release();
     }

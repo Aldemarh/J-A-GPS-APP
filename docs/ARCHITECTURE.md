@@ -137,17 +137,26 @@ J&A-GPS-APP/
 - Desarrollo usa el branch `dev` de Neon, base `jya_gps`.
 - El branch `production`, base `neondb`, tiene un esquema anterior distinto (accounts, memberships, PostGIS/TimescaleDB). Las migraciones de este repo **no** se aplican ahí. Unificar ambos diseños es una decisión pendiente.
 
-## Etapas (plan persona natural)
-1. ✅ Backend: configuración, PostgreSQL, autenticación JWT.
-2. ✅ Frontend: login, registro y ruta protegida.
-3. ✅ Vehículos (CRUD por cuenta) y mapa base.
-4. ✅ Dispositivos GPS: registro y vínculo con el vehículo.
-5. ✅ Recepción de posiciones (protocolo de Traccar Client) y última ubicación en el mapa. Probado con el simulador; la prueba con un celular real queda para cuando la API esté publicada con HTTPS (en red local exige IP, mismo Wi‑Fi y permiso de red local en iOS).
-6. ✅ Mapa en vivo con el diseño de la landing: menú, contadores de la flota, estado y detalle de cada vehículo, marcadores que se deslizan.
-7. Tiempo real con Socket.IO: las posiciones llegan al instante, sin consultar cada 5 s.
-8. ✅ Historial de recorridos: trayecto por día, distancia, tiempos y paradas.
-9. Mi cuenta: perfil, cambio de contraseña y recuperación por correo.
-10. Alertas básicas: exceso de velocidad, sin señal y geocercas.
-11. Despliegue: servidor público con HTTPS, dominio y renovación de sesión (refresh tokens).
+### Calidad
+- ESLint en los dos proyectos (`npm run lint`). En el frontend incluye las reglas del React Compiler: los hooks de datos cambian el estado solo cuando llega la respuesta (el "cargando" inicial va en `useState`), y lo que depende de una selección se guarda junto a su clave (vehículo y día) en vez de limpiarlo en un efecto.
+- CI en GitHub Actions (`.github/workflows/ci.yml`): lint, migraciones y pruebas del backend sobre un PostgreSQL 18 desechable, y build del frontend.
+- `npm run dev` del backend usa nodemon: `node --watch` reinicia también cuando cambia solo la fecha de último acceso de un archivo, y Windows la actualiza al leer archivos.
 
-Después: plan de empresa (usuarios, roles, invitaciones, suscripciones).
+## Plan de trabajo (persona natural)
+
+Ya construido: autenticación JWT, vehículos por cuenta, dispositivo (celular con Traccar Client), recepción de posiciones, mapa en vivo con el diseño de la landing, historial de recorridos y Google Maps opcional (apagado).
+
+- **Etapa 0, ordenar:** historial en `main`, CI, linter, `npm run dev` estable en Windows, base de producción en Neon.
+- **Fase 1, MVP lanzable:**
+  1. Capa de integración de GPS físicos (propuesta: Traccar como traductor de protocolos que reenvía posiciones normalizadas a la API) y Dispositivos v2: IMEI, modelo, fabricante, desvincular, historial de comunicación.
+  2. Servidor de pruebas público (HTTPS y puertos TCP) y prueba con un GPS físico real.
+  3. Tiempo real con Socket.IO (canal por cuenta, autenticado con el token).
+  4. Página de detalle del vehículo.
+  5. Alertas básicas (exceso de velocidad, batería baja, desconexión o pérdida de comunicación) y Centro de seguridad.
+  6. Dashboard de inicio con datos reales.
+  7. Historial v2: exportar y dividir el día en viajes.
+  8. Antes de lanzar: sesión con renovación y cookies, recuperación de contraseña, privacidad (Ley 1581 de 2012), partición de `positions` y copias de seguridad.
+- **Fase 2:** geocercas, alertas de entrada y salida, compartir ubicación con enlace que vence, resto de alertas.
+- **Fase 3:** estadísticas y reportes, mantenimiento, documentos del vehículo.
+- **Fase 4:** planes y permisos por plan, pagos, soporte.
+- **Fase 5 (no se desarrolla todavía):** empresas, organizaciones, roles y flotas. La base ya está preparada (`tenants.type`, `users.role`).

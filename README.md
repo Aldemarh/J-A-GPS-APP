@@ -25,8 +25,10 @@ cd backend
 npm install
 cp .env.example .env        # y completar DATABASE_URL, JWT_SECRET, etc.
 npm run db:migrate          # crea las tablas
-npm run dev                 # API en http://localhost:4000
+npm run dev                 # API en http://localhost:4000 (se reinicia al guardar cambios)
 ```
+
+`npm run dev` usa nodemon y no `node --watch`: en Windows, `node --watch` reiniciaba la API cuando solo cambiaba la fecha de último acceso de un archivo (al abrirlo VS Code, git o el antivirus) y cortaba las peticiones en curso. nodemon reinicia solo si el archivo cambió. En PowerShell, si `npm` está bloqueado, usar `npm.cmd`.
 
 Verificar que funciona:
 
@@ -117,14 +119,23 @@ Opcional: para ver el mapa con Google Maps, copia `frontend/.env.example` como `
 
 El diseño sigue el panel de demostración de la landing (`Project-GPS`). En el mapa en vivo, los contadores (en movimiento, detenidos, sin señal) filtran la lista y el mapa; al pulsar un vehículo el mapa vuela hasta él y muestra su detalle.
 
-## Pruebas
+## Pruebas y calidad
 
 ```bash
 cd backend
 npm test                    # requiere la base de datos con migraciones aplicadas
+npm run lint                # ESLint
+
+cd frontend
+npm run lint                # ESLint (incluye las reglas del React Compiler)
+npm run build
 ```
 
 Las pruebas crean cuentas `@ejemplo.com` y las borran al terminar. Nunca ejecutarlas contra la base de producción.
+
+**Integración continua** (`.github/workflows/ci.yml`): en cada PR y en cada push a `main`, GitHub Actions corre el lint de los dos proyectos, aplica las migraciones y las pruebas del backend sobre un PostgreSQL 18 desechable (sin Neon ni secretos) y compila el frontend.
+
+Los scripts llaman a las herramientas con `node node_modules/...` en vez de `npx` o `.bin`: el `&` del nombre de la carpeta (`J&A-GPS-APP`) rompe esos atajos en Windows.
 
 ## Seguridad
 

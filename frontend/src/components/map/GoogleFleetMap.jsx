@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+/* global google -- lo define el script de Google Maps al cargar */
+import { useCallback, useEffect, useRef } from 'react';
 import {
   APILoadingStatus,
   APIProvider,
@@ -95,11 +96,13 @@ function isWellInside(map, lat, lng) {
 /**
  * Un vehículo en el mapa. Se maneja el AdvancedMarkerElement directamente (como en Leaflet)
  * para reutilizar el mismo HTML del marcador y animar su recorrido entre posiciones.
+ * El marcador vive en una ref: es un objeto de Google, no estado de React. Los efectos de abajo
+ * dependen de map y markerLibrary para volver a aplicarse cuando el marcador se crea.
  */
 function VehicleMarker({ row, selected, onSelect }) {
   const map = useMap();
   const markerLibrary = useMapsLibrary('marker');
-  const [marker, setMarker] = useState(null);
+  const markerRef = useRef(null);
   const { vehicle, position, status } = row;
   const { latitude: lat, longitude: lng, course } = position;
   const title = markerTitle(row);
@@ -109,41 +112,44 @@ function VehicleMarker({ row, selected, onSelect }) {
     if (!map || !markerLibrary) return undefined;
     const content = document.createElement('div');
     content.className = 'vm vm-google';
-    const created = new markerLibrary.AdvancedMarkerElement({
+    const marker = new markerLibrary.AdvancedMarkerElement({
       map,
       position: { lat, lng },
       content,
       gmpClickable: true, // también se puede enfocar con Tab y abrir con Enter
     });
-    setMarker(created);
+    markerRef.current = marker;
     return () => {
-      created.map = null;
-      setMarker(null);
+      marker.map = null;
+      markerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, markerLibrary]);
 
   useEffect(() => {
+    const marker = markerRef.current;
     if (!marker) return;
     marker.content.innerHTML = markerHtml({ plate: vehicle.plate, status, selected, course });
     marker.title = title;
     marker.zIndex = selected ? 1000 : 0;
-  }, [marker, title, vehicle.plate, status, selected, course]);
+  }, [map, markerLibrary, title, vehicle.plate, status, selected, course]);
 
   useEffect(() => {
+    const marker = markerRef.current;
     if (!marker) return undefined;
     const handleClick = () => onSelect(vehicle.id);
     marker.addEventListener('gmp-click', handleClick);
     return () => marker.removeEventListener('gmp-click', handleClick);
-  }, [marker, onSelect, vehicle.id]);
+  }, [map, markerLibrary, onSelect, vehicle.id]);
 
   // Desliza el marcador desde donde está hasta la nueva posición.
   useEffect(() => {
+    const marker = markerRef.current;
     if (!marker) return undefined;
     return glide(readPosition(marker.position), { lat, lng }, (a, b) => {
       marker.position = { lat: a, lng: b };
     });
-  }, [marker, lat, lng]);
+  }, [map, markerLibrary, lat, lng]);
 
   return null;
 }
